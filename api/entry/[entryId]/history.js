@@ -1,4 +1,5 @@
-import fetch from 'node-fetch';
+// Dynamically import node-fetch for ESM compatibility
+const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
 export default async function handler(req, res) {
   const { entryId } = req.query;
@@ -8,9 +9,7 @@ export default async function handler(req, res) {
       { headers: { 'User-Agent': 'Mozilla/5.0' } }
     );
     if (!response.ok) {
-      return res
-        .status(response.status)
-        .json({ error: `FPL API returned ${response.status}` });
+      return res.status(response.status).json({ error: `FPL API returned ${response.status}` });
     }
     const data = await response.json();
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=3600');

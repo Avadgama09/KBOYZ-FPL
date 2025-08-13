@@ -1,4 +1,5 @@
-import fetch from 'node-fetch';
+// Dynamically import node-fetch for ESM compatibility
+const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
 export default async function handler(req, res) {
   const { entryId } = req.query;
