@@ -299,7 +299,7 @@ async function populateAchievements() {
   if (gkDiv) gkDiv.innerHTML = "<div>Coming soon (GK points)</div>";
 
   await populateRangeLeaderboard('earlyBirdBoard', 1, 10);
-  await populateRangeLeaderboard('endgameStrategistBoard', 31, 38);
+  await populateRangeLeaderboard('endgameStrategistBoard', 29, 38);
   await populateBenchWarmerLeaderboard();
   await populateComebackKidLeaderboard();
   const chipDiv = document.getElementById('chipMasterBoard');
@@ -320,21 +320,48 @@ function createLeaderboardItem(rank, name, value) {
 async function populateRangeLeaderboard(divId, gwStart, gwEnd) {
   const div = document.getElementById(divId);
   if (!div) return;
+  
+  // Show loading state
   div.innerHTML = "<div>Loading...</div>";
+  
   const computed = [];
+  let hasAnyData = false;
+  
   for (const m of managers) {
     try {
       const hist = await fetchManagerHistory(m.entryId);
-      const points = (hist.current || [])
-        .filter(r => r.event >= gwStart && r.event <= gwEnd)
-        .reduce((sum, r) => sum + (r.points || 0), 0);
-      computed.push({ name: m.displayName, points });
-    } catch {}
+      const gwData = (hist.current || []).filter(r => r.event >= gwStart && r.event <= gwEnd);
+      const points = gwData.reduce((sum, r) => sum + (r.points || 0), 0);
+      
+      if (gwData.length > 0) hasAnyData = true;
+      computed.push({ 
+        name: m.displayName, 
+        points,
+        gwsPlayed: gwData.length 
+      });
+    } catch {
+      computed.push({ name: m.displayName, points: 0, gwsPlayed: 0 });
+    }
   }
-  computed.sort((a, b) => b.points - a.points);
+  
+  // If no gameweek data exists yet
+  if (!hasAnyData) {
+    div.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">
+      🏁 Waiting for GW${gwStart}-${gwEnd} to begin<br>
+      <small>Will update automatically once gameweeks begin</small>
+    </div>`;
+    return;
+  }
+  
+  // Sort by points, then by GWs played as tiebreaker
+  computed.sort((a, b) => b.points - a.points || b.gwsPlayed - a.gwsPlayed);
+  
   div.innerHTML = "";
   computed.slice(0, 5).forEach((mgr, idx) => {
-    div.appendChild(createLeaderboardItem(idx + 1, mgr.name, `${mgr.points} pts`));
+    const valueText = mgr.gwsPlayed > 0 ? 
+      `${mgr.points} pts (${mgr.gwsPlayed} GWs)` : 
+      'No data yet';
+    div.appendChild(createLeaderboardItem(idx + 1, mgr.name, valueText));
   });
 }
 

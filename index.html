@@ -27,8 +27,8 @@
                 <div id="loginError" class="login-error hidden"></div>
             </form>
             <div class="league-info">
-                <p><strong>League Code:</strong> 379727</p>
-                <p><strong>Total Prize Pool:</strong> ₹14,400</p>
+                <p><strong>League Code:</strong> 976735</p>
+                <p><strong>Total Prize Pool:</strong> ₹22,500</p>
             </div>
         </div>
     </div>
@@ -56,200 +56,225 @@
             </div>
         </header>
 
+        <!-- Prize Summary Section -->
+        <section id="prizeSummary" class="main-section">
+            <div class="container">
+                <h2>Prize Pool Breakdown</h2>
+                <div class="prize-grid">
+                    <div>
+                        <strong>Grand Champions</strong>
+                        <ul>
+                            <li>1st: 4,500</li>
+                            <li>2nd: 3,500</li>
+                            <li>3rd: 2,500</li>
+                            <li><em>Subtotal: 10,500</em></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <strong>Achievements</strong>
+                        <ul>
+                            <li>Endgame Strategist: 1,500</li>
+                            <li>The Early Bird: 1,500</li>
+                            <li>Elite Tactician: 2,000</li>
+                            <li>Chip Master: 1,500</li>
+                            <li>Bench Warmer Champion: 1,000</li>
+                            <li>Comeback Kid: 1,000</li>
+                            <li>Wildcard Wonder: 1,500</li>
+                            <li>Manager of the Month: 2,000</li>
+                            <li><em>Subtotal: 12,000</em></li>
+                        </ul>
+                    </div>
+                    <div class="total">
+                        <strong>Total Payout:</strong> 22,500
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Dashboard Section -->
-        <!-- Dashboard Section -->
-<section id="dashboard" class="main-section active">
-  <div class="container">
-    <div class="dashboard-toprow">
-      <!-- Current Rank -->
-      <div class="dashboard-tile current-rank">
-        <h4>Current Rank</h4>
-        <div class="primary-big" id="currentRank">#--</div>
-        <div class="secondary-detail" id="currentPoints">-- pts</div>
-        <div class="secondary-detail" id="teamName">–</div>
-      </div>
-      <!-- Last GW Score -->
-      <div class="dashboard-tile last-gw">
-        <h4>Last GW Score</h4>
-        <div class="primary-big" id="lastGWPoints">-- pts</div>
-        <div class="secondary-detail" id="lastGWAvg">(League avg: -- pts)</div>
-        <div class="secondary-detail" id="lastGWCaption">Captain: --</div>
-      </div>
-      <!-- Next Deadline -->
-      <div class="dashboard-tile next-deadline">
-        <h4>Next Deadline</h4>
-        <div class="primary-big" id="nextGWDeadline">--</div>
-        <div class="secondary-detail" id="nextGWCountdown">--</div>
-        <div class="secondary-detail" id="nextCaptainFixture">Captain fixture: --</div>
-      </div>
-      <!-- Squad Status / Transfers -->
-      <div class="dashboard-tile squad-status">
-        <h4>Your Squad</h4>
-        <div class="primary-big" id="freeTransfers">-- Free Transfers</div>
-        <div class="secondary-detail" id="bankValue">Bank: --</div>
-        <a
-          href="https://fantasy.premierleague.com/my-team"
-          target="_blank"
-          class="action-link"
-          style="margin-top:10px;display:inline-block;font-size:1em;padding:5px 16px;background:#0cb; color:#fff; border-radius:5px; text-decoration:none; font-weight:500; box-shadow: 0 1px 4px rgba(0,0,0,0.09); transition:background 0.14s;"
-          >Pick Team &rarr;</a>
-      </div>
-    </div>
-  </div>
-</section>
+        <section id="dashboard" class="main-section active">
+            <div class="container">
+                <div class="dashboard-toprow">
+                    <!-- Current Rank -->
+                    <div class="dashboard-tile current-rank">
+                        <h4>Current Rank</h4>
+                        <div class="primary-big" id="currentRank">#--</div>
+                        <div class="secondary-detail" id="currentPoints">-- pts</div>
+                        <div class="secondary-detail" id="teamName">–</div>
+                    </div>
+                    <!-- Last GW Score -->
+                    <div class="dashboard-tile last-gw">
+                        <h4>Last GW Score</h4>
+                        <div class="primary-big" id="lastGWPoints">-- pts</div>
+                        <div class="secondary-detail" id="lastGWAvg">(League avg: -- pts)</div>
+                        <div class="secondary-detail" id="lastGWCaption">Captain: --</div>
+                    </div>
+                    <!-- Next Deadline -->
+                    <div class="dashboard-tile next-deadline">
+                        <h4>Next Deadline</h4>
+                        <div class="primary-big" id="nextGWDeadline">--</div>
+                        <div class="secondary-detail" id="nextGWCountdown">--</div>
+                        <div class="secondary-detail" id="nextCaptainFixture">Captain fixture: --</div>
+                    </div>
+                    <!-- Squad Status / Transfers -->
+                    <div class="dashboard-tile squad-status">
+                        <h4>Your Squad</h4>
+                        <div class="primary-big" id="freeTransfers">-- Free Transfers</div>
+                        <div class="secondary-detail" id="bankValue">Bank: --</div>
+                        <a
+                            href="https://fantasy.premierleague.com/my-team"
+                            target="_blank"
+                            class="action-link"
+                            style="margin-top:10px;display:inline-block;font-size:1em;padding:5px 16px;background:#0cb;color:#fff;border-radius:5px;text-decoration:none;font-weight:500;box-shadow:0 1px 4px rgba(0,0,0,0.09);transition:background 0.14s;"
+                            >Pick Team &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- Achievements Section -->
         <section id="achievements" class="main-section">
-  <div class="container">
-    <h2>Achievement Leaderboards</h2>
-    <div class="achievements-grid">
+            <div class="container">
+                <h2>Achievement Leaderboards</h2>
+                <div class="achievements-grid">
 
-      <!-- Grand Champion -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>Grand Champion</h3>
-          <p>Top 3 positions – ₹8,500 total</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <p class="desc">Awarded to the managers ranked 1st–3rd in the final overall league standings (highest total points after GW38).</p>
-            <ul>
-              <li>1st: ₹4,500</li>
-              <li>2nd: ₹2,500</li>
-              <li>3rd: ₹1,500</li>
-            </ul>
-            <div class="board-live" id="grandChampionBoard"></div>
-          </div>
-        </div>
-      </div>
+                    <!-- Grand Champion -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>Grand Champion</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <p class="desc">Awarded to the managers ranked 1st–3rd in the final overall league standings.</p>
+                                <ul>
+                                    <li>1st: 4,500</li>
+                                    <li>2nd: 2,500</li>
+                                    <li>3rd: 1,500</li>
+                                </ul>
+                                <div class="board-live" id="grandChampionBoard"></div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Manager of the Month -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>Manager of the Month</h3>
-          <p>₹150 per month × 10 months = ₹1,500</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <p class="desc">Highest total points in each calendar month across the season. 10 awards available.</p>
-            <div class="board-live" id="monthlyWinners"></div>
-          </div>
-        </div>
-      </div>
+                    <!-- Manager of the Month -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>Manager of the Month</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <p class="desc">Highest total points in each calendar month across the season. 10 awards available.</p>
+                                <div class="board-live" id="monthlyWinners"></div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Streak Specialist -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>Streak Specialist</h3>
-          <p>Longest consecutive above-average weeks – ₹400</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <p class="desc">Manager with the longest consecutive run of above-average weekly scores (compared to league average).</p>
-            <div class="board-live" id="streakBoard"></div>
-          </div>
-        </div>
-      </div>
+                    <!-- Streak Specialist -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>Streak Specialist</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <p class="desc">Manager with the longest consecutive run of above-average weekly scores.</p>
+                                <div class="board-live" id="streakBoard"></div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Elite Tactician -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>Elite Tactician</h3>
-          <p>Captain + GK points – ₹1,000 total</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <strong>Captain Master (₹500)</strong>
-            <div class="board-live" id="captainBoard"></div>
-            <strong style="margin-top: 12px; display:block;">Keeper King (₹500)</strong>
-            <div class="board-live" id="gkBoard"></div>
-            <p class="desc">Based on best combined captain and goalkeeper point choices all season.</p>
-          </div>
-        </div>
-      </div>
+                    <!-- Elite Tactician -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>Elite Tactician</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <strong>Captain Master</strong>
+                                <div class="board-live" id="captainBoard"></div>
+                                <strong style="margin-top: 12px; display:block;">Keeper King</strong>
+                                <div class="board-live" id="gkBoard"></div>
+                                <p class="desc">Based on best combined captain and goalkeeper point choices all season.</p>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- The Early Bird -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>The Early Bird</h3>
-          <p>Most points, GW1–10</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <p class="desc">Manager with the most points scored in the opening 10 GWs – rewarding a flying season start!</p>
-            <div class="board-live" id="earlyBirdBoard"></div>
-          </div>
-        </div>
-      </div>
+                    <!-- The Early Bird -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>The Early Bird</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <p class="desc">Manager with the most points scored in the opening 10 GWs.</p>
+                                <div class="board-live" id="earlyBirdBoard"></div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Endgame Strategist -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>Endgame Strategist</h3>
-          <p>Most points, GW31–38</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <p class="desc">Manager with the most points in the final 8 gameweeks of the season – the best finisher!</p>
-            <div class="board-live" id="endgameStrategistBoard"></div>
-          </div>
-        </div>
-      </div>
+                    <!-- Endgame Strategist -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>Endgame Strategist</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <p class="desc">Manager with the most points in the final 10 gameweeks of the season.</p>
+                                <div class="board-live" id="endgameStrategistBoard"></div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Bench Warmer Champion -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>Bench Warmer Champion</h3>
-          <p>Most total points left on the bench</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <p class="desc">A bit of fun: celebrates the manager who left the highest total points on their bench all season.</p>
-            <div class="board-live" id="benchWarmerBoard"></div>
-          </div>
-        </div>
-      </div>
+                    <!-- Bench Warmer Champion -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>Bench Warmer Champion</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <p class="desc">Celebrates the manager who left the highest total points on their bench all season.</p>
+                                <div class="board-live" id="benchWarmerBoard"></div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Comeback Kid -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>Comeback Kid</h3>
-          <p>Biggest improvement in league rank (GW19 → GW38)</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <p class="desc">Manager who improved their ranking the most from midseason to the end: real resilience rewarded.</p>
-            <div class="board-live" id="comebackKidBoard"></div>
-          </div>
-        </div>
-      </div>
+                    <!-- Comeback Kid -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>Comeback Kid</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <p class="desc">Manager who improved their ranking the most from midseason (GW19) to the end (GW38).</p>
+                                <div class="board-live" id="comebackKidBoard"></div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Chip Master -->
-      <div class="achievement-card" onclick="toggleExpand(this)">
-        <div class="card-main">
-          <h3>Chip Master</h3>
-          <p>Best chip performance (Free Hit, Bench Boost, Triple Captain, etc.)</p>
-          <span class="expand-icon">+</span>
-        </div>
-        <div class="card-expand">
-          <div>
-            <p class="desc">Award for maximizing the chips to greatest effect—includes all managers’ best use of FPL chips during the season.</p>
-            <div class="board-live" id="chipMasterBoard"></div>
-          </div>
-        </div>
-      </div>
+                    <!-- Chip Master -->
+                    <div class="achievement-card" onclick="toggleExpand(this)">
+                        <div class="card-main">
+                            <h3>Chip Master</h3>
+                            <span class="expand-icon">+</span>
+                        </div>
+                        <div class="card-expand">
+                            <div>
+                                <p class="desc">Award for maximizing the chips (Free Hit, Bench Boost, Triple Captain, etc.) throughout the season.</p>
+                                <div class="board-live" id="chipMasterBoard"></div>
+                            </div>
+                        </div>
+                    </div>
 
-    </div>
-  </div>
-</section>
+                </div>
+            </div>
+        </section>
 
         <!-- League Table Section -->
         <section id="leaguetable" class="main-section">
@@ -278,6 +303,7 @@
                 </div>
             </div>
         </section>
+
     </div>
 
     <script src="app.js"></script>

@@ -1565,3 +1565,34 @@ select.form-control {
   .dashboard-toprow { grid-template-columns: 1fr; }
   .dashboard-tile { min-height: 100px; }
 }
+/* Prize Summary Grid */
+.prize-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
+}
+.prize-grid > div {
+  background: var(--color-surface);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-base);
+  padding: var(--space-16);
+}
+.prize-grid ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.prize-grid li {
+  margin: var(--space-4) 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+.prize-grid .total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
