@@ -1,6 +1,8 @@
 // ------------ USER CONFIGURATION --------------
 const managers = [
   { username: "ashishvadgama", entryId: 539005, displayName: "Ashish Vadgama" },
+  { username: "rahulsani", entryId: 6379954, displayName: "Rahul Sani" },
+  { username: "shaktimelwani", entryId: 5919446, displayName: "Shakti Melwani" },
   { username: "utsavbachani", entryId: 4687835, displayName: "Utsav Bachani" },
   { username: "puravdesai", entryId: 1102461, displayName: "Purav Desai" },
   { username: "ashishvishwakarma", entryId: 569159, displayName: "Ashish Vishwakarma" },
@@ -15,8 +17,8 @@ const LEAGUE_ID = 976735;
 
 // Proxy base (server.js must be running locally)
 const PROXY_ROOT = "http://localhost:5001/api";
-// Helper: all FPL paths start with /api/...
-const FPL = (path) => `${PROXY_ROOT}/api${path}`;
+// Helper: all FPL paths start with /api/... - FIXED the double /api issue
+const FPL = (path) => `${PROXY_ROOT}${path}`;
 
 let currentUser = null;
 let leagueStandings = [];
@@ -41,12 +43,25 @@ async function fetchLeagueStandings(finalEvent = null) {
   if (finalEvent) url += `?event=${finalEvent}`;
   console.log("[fetchLeagueStandings] GET", url);
   const data = await getJson(url);
-  if (!data?.standings?.results) {
-    console.warn("[fetchLeagueStandings] Unexpected payload:", data);
-    throw new Error("Unexpected standings shape");
+
+  // Try official standings first
+  const standings = data?.standings?.results || [];
+  if (standings.length > 0) {
+    return standings;
   }
-  return data.standings.results;
+
+  // Fallback to new_entries before season kickoff
+  const newEntries = data?.new_entries?.results || [];
+  console.warn("[fetchLeagueStandings] No standings yet; using new_entries:", newEntries);
+  return newEntries.map((e, i) => ({
+    entry: e.entry,
+    entry_name: e.entry_name,
+    player_name: `${e.player_first_name} ${e.player_last_name}`,
+    total: 0,
+    rank: i + 1
+  }));
 }
+
 
 async function fetchManagerEntry(entryId) {
   const url = FPL(`/entry/${entryId}/`);
@@ -116,15 +131,18 @@ function handleLogin(e) {
     errorDiv.classList.remove('hidden');
   }
 }
+
 function handleLogout() {
   currentUser = null;
   sessionStorage.removeItem('currentUser');
   showLoginScreen();
 }
+
 function showLoginScreen() {
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('mainApp').classList.add('hidden');
 }
+
 function navigateToSection(sectionName) {
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelector(`[data-section="${sectionName}"]`).classList.add('active');
@@ -152,9 +170,6 @@ async function showMainApp() {
     console.log('[init] populateLeagueTable()');
     populateLeagueTable();
   }, 0);
-
-  // Optional: automatically switch to League Table after login
-  // navigateToSection('leaguetable');
 }
 
 // ========== HEADER/DASHBOARD MINICARD ==========
