@@ -15,26 +15,35 @@ const managers = [
 const MANAGER_PASSWORD = "kboyz2025";
 const LEAGUE_ID = 976735;
 
-// Proxy base (server.js must be running locally)
-const PROXY_ROOT = "http://localhost:5001/api";
-// Helper: all FPL paths start with /api/... - FIXED the double /api issue
+// Dynamically set proxy root for local vs production
+const isLocal = window.location.hostname === 'localhost'
+             || window.location.hostname === '127.0.0.1';
+const PROXY_ROOT = isLocal
+  ? 'http://localhost:5001/api'
+  : '/api';
+
+// Helper: all FPL paths start with /api/...
 const FPL = (path) => `${PROXY_ROOT}${path}`;
 
+// ---------- Internal State ----------
 let currentUser = null;
 let leagueStandings = [];
 
-// ---------- Fetch helpers with diagnostics ----------
+// ---------- Fetch Helpers ----------
 async function getJson(url) {
   const res = await fetch(url, { credentials: "omit" });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} ${res.statusText} @ ${url}\nBody: ${text.slice(0, 300)}`);
+    throw new Error(`HTTP ${res.status} ${res.statusText} @ ${url}\nBody: ${text.slice(0,300)}`);
   }
   const txt = await res.text();
-  try { return JSON.parse(txt); }
-  catch {
-    // Be forgiving if trailing commas sneak in
-    return JSON.parse(txt.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]"));
+  try {
+    return JSON.parse(txt);
+  } catch {
+    // strip trailing commas
+    return JSON.parse(
+      txt.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]")
+    );
   }
 }
 
@@ -44,13 +53,11 @@ async function fetchLeagueStandings(finalEvent = null) {
   console.log("[fetchLeagueStandings] GET", url);
   const data = await getJson(url);
 
-  // Try official standings first
   const standings = data?.standings?.results || [];
   if (standings.length > 0) {
     return standings;
   }
 
-  // Fallback to new_entries before season kickoff
   const newEntries = data?.new_entries?.results || [];
   console.warn("[fetchLeagueStandings] No standings yet; using new_entries:", newEntries);
   return newEntries.map((e, i) => ({
@@ -61,7 +68,6 @@ async function fetchLeagueStandings(finalEvent = null) {
     rank: i + 1
   }));
 }
-
 
 async function fetchManagerEntry(entryId) {
   const url = FPL(`/entry/${entryId}/`);
@@ -84,31 +90,28 @@ async function fetchBootstrap() {
 async function fetchTeamPicks(entryId, event) {
   const url = FPL(`/entry/${entryId}/event/${event}/picks/`);
   console.log("[fetchTeamPicks] GET", url);
-  try { return await getJson(url); } catch { return null; }
+  try { return await getJson(url); }
+  catch { return null; }
 }
 
-// ------------ LOGIN AND NAVIGATION --------------
+// ------------ Initialization & Routing --------------
 document.addEventListener('DOMContentLoaded', initializeApp);
 
 function initializeApp() {
   document.getElementById('loginForm').addEventListener('submit', handleLogin);
   document.getElementById('logoutBtn').addEventListener('click', handleLogout);
   document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => navigateToSection(btn.getAttribute('data-section')));
+    btn.addEventListener('click', () => navigateToSection(btn.dataset.section));
   });
 
-  // When opening the League Table tab, (re)render the table
   const leagueBtn = document.querySelector('.nav-btn[data-section="leaguetable"]');
   if (leagueBtn) {
-    leagueBtn.addEventListener('click', () => {
-      console.log('[nav] leaguetable clicked → populateLeagueTable()');
-      populateLeagueTable();
-    });
+    leagueBtn.addEventListener('click', () => populateLeagueTable());
   }
 
-  const savedUser = sessionStorage.getItem('currentUser');
-  if (savedUser) {
-    currentUser = JSON.parse(savedUser);
+  const saved = sessionStorage.getItem('currentUser');
+  if (saved) {
+    currentUser = JSON.parse(saved);
     showMainApp();
   } else {
     showLoginScreen();
@@ -119,16 +122,17 @@ function handleLogin(e) {
   e.preventDefault();
   const username = document.getElementById('username').value.toLowerCase().trim();
   const password = document.getElementById('password').value;
-  const errorDiv = document.getElementById('loginError');
+  const err = document.getElementById('loginError');
   const manager = managers.find(m => m.username === username);
+
   if (manager && password === MANAGER_PASSWORD) {
     currentUser = manager;
     sessionStorage.setItem('currentUser', JSON.stringify(manager));
     showMainApp();
-    errorDiv.classList.add('hidden');
+    err.classList.add('hidden');
   } else {
-    errorDiv.textContent = "Invalid username or password";
-    errorDiv.classList.remove('hidden');
+    err.textContent = "Invalid username or password";
+    err.classList.remove('hidden');
   }
 }
 
@@ -143,66 +147,60 @@ function showLoginScreen() {
   document.getElementById('mainApp').classList.add('hidden');
 }
 
-function navigateToSection(sectionName) {
-  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelector(`[data-section="${sectionName}"]`).classList.add('active');
-  document.querySelectorAll('.main-section').forEach(section => section.classList.remove('active'));
-  document.getElementById(sectionName).classList.add('active');
+function navigateToSection(sec) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-section="${sec}"]`).classList.add('active');
+  document.querySelectorAll('.main-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(sec).classList.add('active');
 }
 
-// ------------ MAIN: Show app and fetch all -----------
+// ------------ Main App Rendering -------------
 async function showMainApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+
   try {
     leagueStandings = await fetchLeagueStandings();
-    console.log("[showMainApp] standings loaded:", leagueStandings?.length);
+    console.log("[showMainApp] standings loaded:", leagueStandings.length);
   } catch (e) {
     console.error("fetchLeagueStandings FAILED:", e);
     alert("Couldn't load live league data.");
   }
+
   await updateUserHeader();
   await populateDashboardTiles();
   await populateAchievements();
 
-  // Ensure DOM is present; render table once after login
-  setTimeout(() => {
-    console.log('[init] populateLeagueTable()');
-    populateLeagueTable();
-  }, 0);
+  setTimeout(() => populateLeagueTable(), 0);
 }
 
-// ========== HEADER/DASHBOARD MINICARD ==========
+// ========== Header & Dashboard ==========
 async function updateUserHeader() {
   let welcome = "Manager";
   if (currentUser?.entryId) {
     try {
-      const entryData = await fetchManagerEntry(currentUser.entryId);
-      welcome = `${entryData.player_first_name} ${entryData.player_last_name}`;
-      const r = document.getElementById('currentRank');
-      const p = document.getElementById('currentPoints');
-      const t = document.getElementById('teamName');
-      if (r) r.textContent = entryData.summary_overall_rank ? `#${entryData.summary_overall_rank}` : "#–";
-      if (p) p.textContent = entryData.summary_overall_points ? `${entryData.summary_overall_points.toLocaleString()} pts` : "–";
-      if (t) t.textContent = entryData.name || "–";
+      const data = await fetchManagerEntry(currentUser.entryId);
+      welcome = `${data.player_first_name} ${data.player_last_name}`;
+      document.getElementById('currentRank').textContent =
+        data.summary_overall_rank ? `#${data.summary_overall_rank}` : "#–";
+      document.getElementById('currentPoints').textContent =
+        data.summary_overall_points ? `${data.summary_overall_points} pts` : "–";
+      document.getElementById('teamName').textContent = data.name || "–";
     } catch {
-      welcome = currentUser.displayName || "Manager";
+      welcome = currentUser.displayName;
     }
-  } else {
-    welcome = currentUser?.displayName || "Manager";
   }
-  const uw = document.getElementById('userWelcome');
-  if (uw) uw.textContent = `Welcome, ${welcome}`;
+  document.getElementById('userWelcome').textContent = `Welcome, ${welcome}`;
 }
 
-// ========== DASHBOARD TILES LOGIC ==========
 async function populateDashboardTiles() {
   if (!currentUser) return;
   const fill = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  fill('currentRank', '--'); fill('currentPoints', '-- pts'); fill('teamName', '--');
-  fill('lastGWPoints', '-- pts'); fill('lastGWAvg', ''); fill('lastGWCaption', '');
-  fill('nextGWDeadline', '--'); fill('nextGWCountdown', '--'); fill('nextCaptainFixture', '--');
-  fill('freeTransfers', '-- Free Transfers'); fill('bankValue', 'Bank: --');
+
+  fill('currentRank', "--"); fill('currentPoints', "-- pts"); fill('teamName', "–");
+  fill('lastGWPoints', "-- pts"); fill('lastGWAvg', ""); fill('lastGWCaption', "");
+  fill('nextGWDeadline', "--"); fill('nextGWCountdown', "--"); fill('nextCaptainFixture', "--");
+  fill('freeTransfers', "-- Free Transfers"); fill('bankValue', "Bank: --");
 
   let entryData, histData, bootstrap;
   try {
@@ -211,238 +209,212 @@ async function populateDashboardTiles() {
       fetchManagerHistory(currentUser.entryId),
       fetchBootstrap()
     ]);
-  } catch (e) {
-    console.error("Dashboard bootstrap failed:", e);
+  } catch {
+    console.error("Dashboard bootstrap failed");
     return;
   }
 
-  fill('currentRank', entryData.summary_overall_rank ? `#${entryData.summary_overall_rank}` : '--');
-  fill('currentPoints', entryData.summary_overall_points ? `${entryData.summary_overall_points} pts` : '-- pts');
-  fill('teamName', entryData.name || '--');
+  fill('currentRank', entryData.summary_overall_rank ? `#${entryData.summary_overall_rank}` : "--");
+  fill('currentPoints', entryData.summary_overall_points ? `${entryData.summary_overall_points} pts` : "-- pts");
+  fill('teamName', entryData.name || "--");
 
   const now = new Date();
   const events = bootstrap.events || [];
-  const lastFinishedGW = [...events].reverse().find(ev => ev.finished === true);
-  const nextGW = events.find(ev => new Date(ev.deadline_time) > now && ev.finished === false);
+  const lastGW = [...events].reverse().find(ev => ev.finished);
+  const nextGW = events.find(ev => new Date(ev.deadline_time) > now && !ev.finished);
 
-  if (lastFinishedGW) {
-    const gwRow = histData.current?.find(r => r.event === lastFinishedGW.id);
-    fill('lastGWPoints', gwRow ? `${gwRow.points} pts` : '-- pts');
-    if (typeof lastFinishedGW.average_entry_score === "number") {
-      fill('lastGWAvg', `(League avg: ${lastFinishedGW.average_entry_score} pts)`);
-    }
-    let lastCaptain = '--';
+  if (lastGW) {
+    const row = histData.current.find(r => r.event === lastGW.id);
+    fill('lastGWPoints', row ? `${row.points} pts` : "-- pts");
+    fill('lastGWAvg', ` (League avg: ${lastGW.average_entry_score} pts)`);
+    let cap = "--";
     try {
-      const picks = await fetchTeamPicks(currentUser.entryId, lastFinishedGW.id);
-      if (picks?.picks?.length) {
-        const capId = picks.picks.find(p => p.is_captain)?.element;
-        const player = bootstrap.elements?.find(e => e.id === capId);
-        if (player) lastCaptain = player.web_name;
-      }
+      const picks = await fetchTeamPicks(currentUser.entryId, lastGW.id);
+      const capPick = picks.picks.find(p => p.is_captain);
+      const player = bootstrap.elements.find(e => e.id === capPick.element);
+      cap = player.web_name;
     } catch {}
-    fill('lastGWCaption', `Captain: ${lastCaptain}`);
+    fill('lastGWCaption', `Captain: ${cap}`);
   }
 
   if (nextGW) {
-    const deadlineDate = new Date(nextGW.deadline_time);
-    fill('nextGWDeadline', deadlineDate.toLocaleString('en-GB', {
-      weekday: 'short', hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric'
+    const dl = new Date(nextGW.deadline_time);
+    fill('nextGWDeadline', dl.toLocaleString('en-GB', {
+      weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     }));
-    const diff = deadlineDate - Date.now();
-    if (diff > 0) {
-      const days = Math.floor(diff / 86400000);
-      const hours = Math.floor((diff / 3600000) % 24);
-      const mins = Math.floor((diff / 60000) % 60);
-      fill('nextGWCountdown', `in ${days}d ${hours}h ${mins}m`);
-    } else {
-      fill('nextGWCountdown', 'Deadline passed!');
-    }
-    let nextCaptain = '--';
+    const diff = dl - Date.now();
+    const days = Math.floor(diff / 86400000);
+    const hrs = Math.floor((diff/3600000) % 24);
+    const mins = Math.floor((diff/60000) % 60);
+    fill('nextGWCountdown', diff>0 ? `in ${days}d ${hrs}h ${mins}m` : "Deadline passed!");
+    let cap = "--";
     try {
       const picks = await fetchTeamPicks(currentUser.entryId, nextGW.id);
-      if (picks?.picks?.length) {
-        const capId = picks.picks.find(p => p.is_captain)?.element;
-        const player = bootstrap.elements?.find(e => e.id === capId);
-        if (player) nextCaptain = player.web_name;
-      }
-    } catch {}
-    fill('nextCaptainFixture', `Captain: ${nextCaptain}`);
+      const capPick = picks.picks.find(p => p.is_captain);
+      const player = bootstrap.elements.find(e => e.id === capPick.element);
+      cap = player.web_name;
+    } catch{}
+    fill('nextCaptainFixture', `Captain: ${cap}`);
   }
 
-  if (histData?.current?.length) {
-    const currGW = histData.current[histData.current.length - 1];
-    if (typeof currGW?.event_transfers === "number") {
-      fill('freeTransfers', `${currGW.event_transfers} Free Transfers`);
-    }
+  if (histData.current.length) {
+    const last = histData.current[histData.current.length-1];
+    fill('freeTransfers', `${last.event_transfers} Free Transfers`);
   }
-  fill('bankValue', entryData.bank ? `Bank: £${(entryData.bank / 10).toFixed(1)}m` : "Bank: --");
+  fill('bankValue', entryData.bank ? `Bank: £${(entryData.bank/10).toFixed(1)}m` : "Bank: --");
 }
 
-// ========== ACHIEVEMENT LEADERBOARDS ==========
+// ========== Achievements ==========
 async function populateAchievements() {
-  const grandDiv = document.getElementById('grandChampionBoard');
-  if (grandDiv) {
-    grandDiv.innerHTML = "";
-    if (leagueStandings?.length) {
-      leagueStandings.slice(0, 3).forEach((mgr, i) => {
-        grandDiv.appendChild(createLeaderboardItem(i + 1, mgr.player_name, `${mgr.total} pts`));
-      });
-    }
+  const grand = document.getElementById('grandChampionBoard');
+  if (grand) {
+    grand.innerHTML = "";
+    leagueStandings.slice(0,3).forEach((m,i) => {
+      grand.appendChild(createLeaderboardItem(i+1, m.player_name, `${m.total} pts`));
+    });
   }
-  const monthlyDiv = document.getElementById('monthlyWinners');
-  if (monthlyDiv) monthlyDiv.innerHTML = "<div>Coming soon</div>";
-  const streakDiv = document.getElementById('streakBoard');
-  if (streakDiv) streakDiv.innerHTML = "<div>Coming soon (streak calculation)</div>";
-  const captainDiv = document.getElementById('captainBoard');
-  if (captainDiv) captainDiv.innerHTML = "<div>Coming soon (captain points)</div>";
-  const gkDiv = document.getElementById('gkBoard');
-  if (gkDiv) gkDiv.innerHTML = "<div>Coming soon (GK points)</div>";
+
+  document.getElementById('monthlyWinners').innerHTML = "<div>Coming soon</div>";
+  document.getElementById('streakBoard').innerHTML = "<div>Coming soon</div>";
+  document.getElementById('captainBoard').innerHTML = "<div>Coming soon</div>";
+  document.getElementById('gkBoard').innerHTML = "<div>Coming soon</div>";
 
   await populateRangeLeaderboard('earlyBirdBoard', 1, 10);
   await populateRangeLeaderboard('endgameStrategistBoard', 29, 38);
   await populateBenchWarmerLeaderboard();
   await populateComebackKidLeaderboard();
-  const chipDiv = document.getElementById('chipMasterBoard');
-  if (chipDiv) chipDiv.innerHTML = "<div>Coming soon (chip calculation)</div>";
+  document.getElementById('chipMasterBoard').innerHTML = "<div>Coming soon</div>";
 }
 
+// Helper to create leaderboard entries
 function createLeaderboardItem(rank, name, value) {
-  const item = document.createElement('div');
-  item.className = 'leaderboard-item';
-  item.innerHTML = `
+  const d = document.createElement('div');
+  d.className = 'leaderboard-item';
+  d.innerHTML = `
     <span class="leaderboard-rank">#${rank}</span>
     <span class="leaderboard-name">${name}</span>
     <span class="leaderboard-value">${value}</span>
   `;
-  return item;
+  return d;
 }
 
+// ========== Range Leaderboards ==========
 async function populateRangeLeaderboard(divId, gwStart, gwEnd) {
   const div = document.getElementById(divId);
   if (!div) return;
-  
-  // Show loading state
   div.innerHTML = "<div>Loading...</div>";
-  
+
   const computed = [];
-  let hasAnyData = false;
-  
+  let hasData = false;
   for (const m of managers) {
     try {
       const hist = await fetchManagerHistory(m.entryId);
-      const gwData = (hist.current || []).filter(r => r.event >= gwStart && r.event <= gwEnd);
-      const points = gwData.reduce((sum, r) => sum + (r.points || 0), 0);
-      
-      if (gwData.length > 0) hasAnyData = true;
-      computed.push({ 
-        name: m.displayName, 
-        points,
-        gwsPlayed: gwData.length 
-      });
+      const data = hist.current.filter(r => r.event>=gwStart && r.event<=gwEnd);
+      const pts = data.reduce((s,r)=>s+(r.points||0),0);
+      if (data.length) hasData = true;
+      computed.push({ name: m.displayName, points: pts, gws: data.length });
     } catch {
-      computed.push({ name: m.displayName, points: 0, gwsPlayed: 0 });
+      computed.push({ name: m.displayName, points:0, gws:0 });
     }
   }
-  
-  // If no gameweek data exists yet
-  if (!hasAnyData) {
-    div.innerHTML = `<div style="text-align: center; color: #888; padding: 20px;">
+
+  if (!hasData) {
+    div.innerHTML = `<div style="text-align:center;color:#888;padding:20px;">
       🏁 Waiting for GW${gwStart}-${gwEnd} to begin<br>
       <small>Will update automatically once gameweeks begin</small>
     </div>`;
     return;
   }
-  
-  // Sort by points, then by GWs played as tiebreaker
-  computed.sort((a, b) => b.points - a.points || b.gwsPlayed - a.gwsPlayed);
-  
+
+  computed.sort((a,b)=>b.points - a.points || b.gws - a.gws);
   div.innerHTML = "";
-  computed.slice(0, 5).forEach((mgr, idx) => {
-    const valueText = mgr.gwsPlayed > 0 ? 
-      `${mgr.points} pts (${mgr.gwsPlayed} GWs)` : 
-      'No data yet';
-    div.appendChild(createLeaderboardItem(idx + 1, mgr.name, valueText));
+  computed.slice(0,5).forEach((mgr,i)=>{
+    const text = mgr.gws>0
+      ? `${mgr.points} pts (${mgr.gws} GWs)`
+      : "No data yet";
+    div.appendChild(createLeaderboardItem(i+1, mgr.name, text));
   });
 }
 
+// ========== Bench Warmer ==========
 async function populateBenchWarmerLeaderboard() {
   const div = document.getElementById('benchWarmerBoard');
   if (!div) return;
   div.innerHTML = "<div>Loading...</div>";
-  const computed = [];
+  const arr = [];
   for (const m of managers) {
     try {
       const hist = await fetchManagerHistory(m.entryId);
-      const benchPts = (hist.current || []).reduce((sum, gw) => sum + (gw.points_on_bench || 0), 0);
-      computed.push({ name: m.displayName, points: benchPts });
+      const pts = hist.current.reduce((s,gw)=>s+(gw.points_on_bench||0),0);
+      arr.push({ name: m.displayName, points: pts });
     } catch {}
   }
-  computed.sort((a, b) => b.points - a.points);
+  arr.sort((a,b)=>b.points - a.points);
   div.innerHTML = "";
-  computed.slice(0, 5).forEach((mgr, idx) => {
-    div.appendChild(createLeaderboardItem(idx + 1, mgr.name, `${mgr.points} pts`));
+  arr.slice(0,5).forEach((mgr,i)=>{
+    div.appendChild(createLeaderboardItem(i+1, mgr.name, `${mgr.points} pts`));
   });
 }
 
+// ========== Comeback Kid ==========
 async function populateComebackKidLeaderboard() {
   const div = document.getElementById('comebackKidBoard');
   if (!div) return;
   div.innerHTML = "<div>Loading...</div>";
-  let standings19 = [], standings38 = [];
-  try { standings19 = await fetchLeagueStandings(19); } catch { div.innerHTML = "<div>Could not load GW19 data</div>"; return; }
-  try { standings38 = await fetchLeagueStandings(38); } catch { div.innerHTML = "<div>Could not load GW38 data</div>"; return; }
-  const rankAtGW19 = {}; standings19.forEach(s => { rankAtGW19[s.entry] = s.rank; });
-  const rankAtGW38 = {}; standings38.forEach(s => { rankAtGW38[s.entry] = s.rank; });
-  const improvement = [];
+
+  let s19=[], s38=[];
+  try { s19 = await fetchLeagueStandings(19); } catch{ div.innerHTML="<div>Could not load GW19</div>"; return; }
+  try { s38 = await fetchLeagueStandings(38); } catch{ div.innerHTML="<div>Could not load GW38</div>"; return; }
+
+  const r19 = Object.fromEntries(s19.map(s=>[s.entry,s.rank]));
+  const r38 = Object.fromEntries(s38.map(s=>[s.entry,s.rank]));
+
+  const diff = [];
   for (const m of managers) {
-    const e = m.entryId;
-    if (typeof rankAtGW19[e] === 'number' && typeof rankAtGW38[e] === 'number') {
-      improvement.push({ name: m.displayName, up: rankAtGW19[e] - rankAtGW38[e] });
+    if (r19[m.entryId] && r38[m.entryId]) {
+      diff.push({ name: m.displayName, up: r19[m.entryId] - r38[m.entryId] });
     }
   }
-  improvement.sort((a, b) => b.up - a.up);
+  diff.sort((a,b)=>b.up - a.up);
+
   div.innerHTML = "";
-  improvement.forEach((mgr, idx) => {
-    div.appendChild(createLeaderboardItem(idx + 1, mgr.name, `${mgr.up > 0 ? "+" : ""}${mgr.up} places`));
+  diff.forEach((mgr,i)=>{
+    const txt = `${mgr.up>0?"+":""}${mgr.up} places`;
+    div.appendChild(createLeaderboardItem(i+1, mgr.name, txt));
   });
 }
 
-// ========== LEAGUE TABLE ==========
+// ========== League Table ==========
 async function populateLeagueTable() {
   const hdr = document.getElementById('currentGWHeader');
   if (hdr) hdr.textContent = "Total Points";
   const tbody = document.getElementById('leagueTableBody');
-  if (!tbody) { console.warn("[populateLeagueTable] #leagueTableBody not found"); return; }
-  tbody.innerHTML = '';
-  console.log('League standings:', leagueStandings);
+  if (!tbody) return;
+  tbody.innerHTML = "";
 
-  if (leagueStandings && leagueStandings.length) {
-    leagueStandings.forEach((m, idx) => {
-      const row = document.createElement('tr');
-      if (matchEntry(m, currentUser)) row.className = 'table-current-user';
-      row.innerHTML = `
-        <td class="table-rank">#${idx + 1}</td>
+  if (leagueStandings.length) {
+    leagueStandings.forEach((m,i) => {
+      const tr = document.createElement('tr');
+      if (m.entry === currentUser?.entryId) tr.classList.add('table-current-user');
+      tr.innerHTML = `
+        <td class="table-rank">#${i+1}</td>
         <td>${m.player_name || "Unknown"}</td>
         <td>${m.entry_name || "Untitled Team"}</td>
         <td>${m.total}</td>
         <td>${m.total}</td>
         <td>-</td>
       `;
-      tbody.appendChild(row);
+      tbody.appendChild(tr);
     });
   } else {
     tbody.innerHTML = '<tr><td colspan="6">League data not available</td></tr>';
   }
 }
 
-function matchEntry(standing, user) {
-  return (user?.entryId && standing.entry === user.entryId) ||
-    (standing.player_name && user?.displayName && standing.player_name.toLowerCase().includes(user.displayName.toLowerCase()));
-}
-
-// ========== ACHIEVEMENT CARD EXPAND/COLLAPSE ==========
+// ========== Card Toggle ==========
 function toggleExpand(card) {
-  const already = card.classList.contains('expanded');
-  document.querySelectorAll('.achievement-card.expanded').forEach(c => c.classList.remove('expanded'));
-  if (!already) card.classList.add('expanded');
+  const was = card.classList.contains('expanded');
+  document.querySelectorAll('.achievement-card.expanded')
+    .forEach(c=>c.classList.remove('expanded'));
+  if (!was) card.classList.add('expanded');
 }
